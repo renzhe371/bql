@@ -1,0 +1,18 @@
+<?php
+require_once('Smarty/Smarty.class.php');
+
+class MySmarty extends Smarty {
+	function MySmarty() {
+		$this->Smarty();
+		$this->caching = 0;
+		$this->compile_dir =  _TEMPLATEC_DIR;
+		$this->template_dir = _TEMPLATE_DIR;
+		$this->cache_dir = _CACHE_DIR;
+		$this->left_delimiter = '<{';
+		$this->right_delimiter = '}>';
+		$this->compile_check = true;
+		$this->debugging = false;
+		$this->compile_id = basename($_SERVER['SCRIPT_FILENAME']);
+	}
+}
+?>

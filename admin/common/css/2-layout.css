@@ -1,0 +1,228 @@
+@charset "utf-8";
+html, body {
+    margin:0;    
+    height:100%; 
+}
+/*------------------------------------------------------------
+	body
+------------------------------------------------------------*/
+body {
+	text-align: center;
+	font-size: 12px;
+	color: #555;
+	line-height:1.2;
+	background: #F0F0F0 url(../images/bg-body.gif) repeat-y left top;
+	height:100%; 
+}
+
+#container{
+	background:url(../images/bg-radial-gradient.gif) no-repeat fixed 230px top transparent;
+	text-align: left;
+	height:100%;
+}
+
+/*------------------------------------------------------------
+	#header
+------------------------------------------------------------*/
+#header {
+	padding: 40px 0 0 9px;
+}
+#header h1 {
+	color:#FFFFFF;
+	font-family: "宋体";
+	font-size:31px;
+	font-weight:bold;
+	position:absolute;
+	top:-1000px;
+}
+#header #logo {
+	margin-bottom: 42px;
+}
+*html #header #logo {
+	display: block;
+	width: 221px;
+	height: 40px;
+	filter: progid:DXImageTransform.Microsoft.AlphaImageLoader(src=common/images/logo_221.png,sizingMethod=crop);
+	background: none;
+}
+*html #header #logo img {
+	visibility: hidden;
+}
+
+#header #profile-links {
+	padding: 0 15px 20px 15px;
+	text-align: right;
+	line-height: 1.5em;
+	font-family: Arial;	
+	font-size: 12px;	
+}
+#header #profile-links a {
+	color: #ccc;
+}
+#header #profile-links a:hover {
+	color: #fff;
+}
+#header #profile-links p {
+	padding-top: 15px;
+}
+#header #profile-links p a{
+	font-family: "宋体";	
+	font-size: 12px;	
+}
+/*------------------------------------------------------------
+	#main
+------------------------------------------------------------*/
+#main {
+	margin:0 30px 0 260px;
+    min-height:100%;
+    _height:100%; 
+	position:relative; 
+}
+
+#main_body{
+	padding:40px 0 50px 0;
+}
+
+/*------------------------------------------------------------
+	conts
+------------------------------------------------------------*/
+#conts {
+	background:none repeat scroll 0 0 #FFFFFF;
+	border:1px solid #CCCCCC;
+	margin:0 0 20px;
+	-moz-border-radius:6px 6px 6px 6px;
+}
+
+#conts h2 {
+	background:url("../images/bg-content-box.gif") repeat-x scroll left top #E5E5E5;
+	margin-top:1px;
+	-moz-border-radius:6px 6px 6px 6px;
+	-moz-border-radius-bottomleft:0;
+	-moz-border-radius-bottomright:0;
+	padding:12px 15px 10px;
+	font-size: 17px;
+	zoom:1;
+}
+#conts .conts_content {
+	border-top: 1px solid #CCC;
+	font-size: 13px;
+	padding: 20px;
+}
+/*------------------------------------------------------------
+	conts
+------------------------------------------------------------*/
+#search {
+	background:none repeat scroll 0 0 #FFFFFF;
+	border:1px solid #CCCCCC;
+	margin:0 0 20px;
+	-moz-border-radius:6px 6px 6px 6px;
+}
+
+#search h2 {
+	background:url("../images/bg-content-box.gif") repeat-x scroll left top #E5E5E5;
+	margin-top:1px;
+	-moz-border-radius:6px 6px 6px 6px;
+	-moz-border-radius-bottomleft:0;
+	-moz-border-radius-bottomright:0;
+	padding:12px 15px 10px;
+	font-size: 17px;
+}
+#search .conts_content {
+	border-top: 1px solid #CCC;
+	font-size: 13px;
+	padding: 20px;
+}
+/*------------------------------------------------------------
+	sideBar
+------------------------------------------------------------*/
+#sideBar {
+	background:url("../images/bg-sidebar.gif") no-repeat scroll left top transparent;
+	width:230px;
+	height:100%;
+	position:absolute;
+	left:0;
+	top:0;
+	color:#888;
+	font-size:11px;
+}
+#sideBar #subnav {
+	width: 206px;
+	padding: 0;
+	margin: 0 0 0 24px;
+	font-family: "宋体";
+}
+
+#sideBar #subnav li {
+	padding-bottom: 7px;
+	text-align: right;
+}
+
+#sideBar #subnav li a.nav-top-item {
+	background: transparent url('../images/bg-menu-item-green.gif') no-repeat right center; 
+	padding: 10px 15px;
+	color: #fff;
+	font-size: 14px;
+	cursor: pointer;
+	display: block;
+	text-decoration: none;
+}
+
+#sideBar #subnav li a.current {
+	background-image: url('../images/bg-menu-item-current.gif') !important;
+	color: #333;
+	font-weight: bold;
+}
+#sideBar #subnav li a.current:hover {
+    color: #333;
+}
+#sideBar #subnav ul {
+	padding: 0;
+	font-size: 12px;
+	margin: 0;
+}
+#sideBar #subnav ul li {
+	list-style: none;
+	margin: 0;
+	_margin-bottom: -15px;
+	text-align: right;
+	padding: 0;
+}
+
+#sideBar #subnav ul li a {
+	padding: 8px 15px;
+	display: block;
+	color: #aaa;
+	font-size: 13px;
+	line-height: 1.2em;
+}
+
+#sideBar #subnav ul li a:hover,
+#sideBar #subnav ul li a.current,
+#sideBar #subnav ul li a.current:hover {
+	color: #fff;
+}
+
+#sideBar #subnav ul li a.current {
+    background: transparent url('../images/menu-current-arrow.gif') right center no-repeat !important;
+}
+
+/*------------------------------------------------------------
+	#subnavi
+------------------------------------------------------------*/
+/*------------------------------------------------------------
+	#footer
+------------------------------------------------------------*/
+#footer {
+	border-top: 1px solid #CCCCCC;
+	font-size:12px;
+	line-height:50px;
+	font-family:Arial;
+	position:absolute;
+    bottom:0;
+    height:50px;
+    width:100%
+}
+
+@media screen and (-webkit-min-device-pixel-ratio:0) {
+
+}

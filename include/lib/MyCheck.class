@@ -1,0 +1,244 @@
+<?php
+class MyCheck {
+
+	function run($table,$form)
+	{
+		$error=array();
+
+		foreach ($table as $field=>$valueArr)
+		{
+			if($valueArr["isNull"]=="N"||$valueArr["isNull"]=="S")
+			{
+				if($valueArr["isNull"]=="N")
+				{
+					$null_err=ERROR_NULL;
+				}
+				else 
+				{
+					$null_err=ERROR_SELECT;
+				}
+				
+				if(!isset($form[$field]))
+				{
+					$error[$field]=$valueArr["text"].$null_err;
+					continue;
+				}
+				elseif(!is_array($form[$field])&&$form[$field]==="")
+				{
+					$error[$field]=$valueArr["text"].$null_err;
+					continue;
+				}
+				elseif (is_array($form[$field])&&empty($form[$field]))
+				{
+					$error[$field]=$valueArr["text"].$null_err;
+					continue;
+				}
+			}
+			
+			if(isset($form[$field])&&$form[$field]!=="")
+			{
+				$type_err="";
+				$length_err="";
+				
+				$checkTypeFunc = '_' . strtolower($valueArr["type"]) . '_check';
+				$type_err=$this->$checkTypeFunc($form[$field]);
+				if($type_err!=VALID)
+				{
+					$error[$field]=$valueArr["text"].$type_err;
+				}
+				else
+				{
+					$length_err=$this->CheckLength($form[$field],$valueArr["minlength"],$valueArr["maxlength"],$valueArr["isNull"]);
+					if($length_err!=VALID)
+					{
+						$error[$field]=$valueArr["text"].$length_err;
+					}
+				}
+			}
+		}
+		
+		return $error;
+	}
+	
+	function _date_check($value) {	
+		$array1 = explode('-',$value);
+		$array2 = explode('/',$value);
+		if ( count($array1) == 3 ) {
+			list($year,$month,$date) = $array1;
+		}
+		elseif ( count($array2) == 3 ) {
+			list($year,$month,$date) = $array2;
+		}
+		else {
+			return ERROR_INVALID;
+		}
+		if ( @checkdate($month,$date,$year) ) {
+			return VALID;
+		}
+		else {
+			return ERROR_INVALID;
+		}
+	}
+
+	function _time_check($value) {
+
+		$array = explode(":",$value);
+
+		if ( isset($array[0]) ) {
+			$hour = (int)$array[0];
+			if ( $hour < 0 or $hour > 24 ) {
+				return ERROR_INVALID;
+			}
+		}
+		if ( isset($array[1]) ) {
+			$min =(int)$array[1];
+			if ( $min < 0 or $min > 59 ) {
+				return ERROR_INVALID;
+			}
+		}
+		if ( isset($array[2]) ) {
+			$sec = (int)$array[2];
+			if ( $sec < 0 or $sec > 59 ) {
+				return ERROR_INVALID;
+			}
+		}
+
+		return VALID;
+	}
+
+	function _dtime_check ( $value ) {
+
+		$array = explode(' ',$value);
+
+		if ( $array ) {
+			if ( $this->_date_check($array[0]) == ERROR_INVALID ) {
+				return  ERROR_INVALID;
+			}
+			if ( isset($array[1]) && $array[1] && $this->_time_check($array[1]) == ERROR_INVALID )  {
+				return  ERROR_INVALID;
+			}
+		}
+		else {
+			return ERROR_INVALID;
+		}
+
+		return VALID;
+
+	}
+
+	function _alnum_check($value) {
+		if ( preg_match("/^[0-9a-zA-Z]+$/",$value) ){
+			return VALID;
+		}
+		else {
+			return ERROR_INVALID;
+		}
+	}
+
+	function _alnumex_check($value) {
+		if ( preg_match("/^[0-9a-zA-Z_]+$/",$value) ){
+			return VALID;
+		}
+		else {
+			return ERROR_INVALID;
+		}
+	}
+
+	function _alpnum_check($value) {
+		if ( preg_match("/^[0-9a-zA-Z]+$/",$value) ){
+			if ( !preg_match("/^[0-9]+$/",$value) ) {
+				return VALID;
+			}
+		}
+		return ERROR_INVALID;
+	}
+
+
+	function _text_check() {
+		return VALID;
+	}
+
+	function _flg_check($value) {
+		if ( $value == 0 || $value == 1 || $value == "" ) {
+			return VALID;
+		}
+		else {
+			return ERROR_INVALID;
+		}
+	}
+
+	function _bit_check($value) {
+		$val = log($value)/log(2);
+		if ( $val == (int)$val ) {
+			return VALID;
+		}
+		else {
+			return ERROR_INVALID;
+		}
+	}
+
+	function _num_check($value) {
+		if (preg_match("/^[0-9]+$/",$value)) {
+			return VALID;
+		}
+		else {
+			return ERROR_INVALID;
+		}
+	}
+
+	function _numex_check($value) {
+		if (preg_match("/^[0-9\-]+$/",$value)) {
+			return VALID;
+		}
+		else {
+			return ERROR_INVALID;
+		}
+	}
+
+	function _tel_check($value) {
+		if ( ereg("^[0-9\-]+$",$value) ) {
+			return VALID;
+		}
+		else {
+			return ERROR_INVALID;
+		}
+	}
+	
+	
+	function _email_check($value) {
+		$mail_regex = "[a-zA-Z0-9_\.-]+@[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+";
+		if ( preg_match("/^$mail_regex$/",$value) ) {
+			return VALID;
+		}
+		else {
+			return ERROR_INVALID;
+		}
+	}
+
+	function CheckLength ( $value , $minlen ,$maxlen , $isnull ) {
+
+		if ( is_array($value) ) {
+			return ERROR_INVALID;
+		}
+
+		$len = mb_strlen($value,"UTF8");
+
+		if ( $isnull && $len == 0) {
+			return VALID;
+		}
+		elseif ( $len == 0 && $minlen > 0) {
+			return ERROR_NULL;
+		}
+		elseif ( $len < $minlen ) {
+			return ERROR_TOO_SHORT;
+		}
+		elseif ( $len > $maxlen ) {
+			return ERROR_TOO_LONG;
+		}
+
+		return VALID;
+
+	}
+}
+
+?>

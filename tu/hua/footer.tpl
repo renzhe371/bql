@@ -1,0 +1,1 @@
+<div id="footer"> &#169; Copyright 2011 PROTRULY | Powered by <a href="index.php">PROTRULY</a> | <a href="#TOP">Top</a> </div>

@@ -1,0 +1,130 @@
+@charset "utf-8";
+@import "../common/css/1-default.css";
+@import "../common/css/3-clearfix.css";
+
+/*---------------Login Page---------------------*/
+
+body {
+	color: #fff;
+	background: #222 url('../common/images/bg-login.gif');
+}
+				
+#login-wrapper {
+	background: url('../common/images/bg-login-top.png') top left repeat-x;
+}
+/**html #login-wrapper {
+	filter: progid:DXImageTransform.Microsoft.AlphaImageLoader(src=common/images/bg-login-top.png,sizingMethod=crop);
+	background: none;
+}
+*/
+#login-top {
+	width: 100%;
+	padding: 140px 0 50px 0;
+	text-align: center;
+}
+/**htm #logo {
+	display: block;
+	width: 221px;
+	height: 40px;
+	filter: progid:DXImageTransform.Microsoft.AlphaImageLoader(src=common/images/logo.png,sizingMethod=crop);
+	background: none;
+}
+*html #logo img {
+	visibility: hidden;
+}*/
+#login-top h1 {
+	color:#FFFFFF;
+	font-family: "宋体";
+	font-size:31px;
+	font-weight:bold;
+	position:absolute;
+	top:-1000px;
+}
+#login-content {
+	text-align: left;
+	width: 300px;
+	margin: 0 auto;
+}
+#login-wrapper #login-content .notification {
+	background-color:#fff;
+	border:0 none;
+	color:#008F9A !important;
+}
+.content-box, .content-box-header, ul.content-box-tabs li a.current, .shortcut-button, .notification {
+	-moz-border-radius:6px 6px 6px 6px;
+}
+.information {
+	background:url("../common/images/icons/information.png") repeat scroll 0 0 #DBE3FF;
+	border-color:#A2B4EE;
+	color:#585B66;
+}
+.notification {
+	background-position:10px 11px !important;
+	background-repeat:no-repeat !important;
+	border:1px solid;
+	font-size:13px;
+	margin:0 0 15px;
+	padding:0;
+	position:relative;
+	width:99.8%;
+}
+.notification div {
+	display:block;
+	font-style:normal;
+	line-height:1.5em;
+	padding:10px 10px 10px 36px;
+}
+#login-content label {
+	color: #fff;
+	font-weight: normal;
+	font-size: 14px;
+	font-family: "宋体";
+	float: left;
+	width: 60px;
+	padding: 0;
+}
+#login-content input {
+	width: 220px;
+	float: right;
+	margin: -2px 0 20px 0;
+	border: 0;
+	background: #fff;
+}
+#login-content p {
+	clear: both;
+}
+#login-content p#remember-password {
+	float: right;
+	font-size: 12px;
+}
+#login-content p#remember-password input {
+	float: none;
+	width: auto;
+	border: 0;
+	background: none;
+	margin: 0 10px 0 0;
+}
+#login-content p .button {
+	width: auto;
+	margin-top: 20px;
+}
+.button, #main-content table tfoot td .bulk-actions select, .pagination a.number, form input.text-input, form textarea, form .wysiwyg, form select, .dp-popup {
+-moz-border-radius:4px 4px 4px 4px;
+}
+#login-content p .button {
+	background: #459300 url("../common/images/bg-button-green.gif") repeat-x left top !important;
+	border:1px solid #459300 !important;
+	color:#FFFFFF !important;
+	cursor:pointer;
+	display:inline-block;
+	font-family: "宋体";
+	font-size:14px !important;
+	padding:4px 7px !important;
+}
+input.text-input {
+	padding: 6px;
+	margin-top: -2px;
+	background: #fff url('../common/images/bg-form-field.gif')  repeat-x left top;
+	border: 1px solid #d5d5d5;
+	color: #333;
+}

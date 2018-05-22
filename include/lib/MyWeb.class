@@ -1,0 +1,953 @@
+<?php 
+ob_start(); 
+@session_start();
+header("Cache-control: private");
+if (strpos(realpath($_SERVER['SCRIPT_FILENAME']),"admin") !== false)
+{
+	define('_BASE_PATH',"..");
+}
+else
+{
+	define('_BASE_PATH',".");
+}
+ini_set('include_path',_BASE_PATH."/include");
+require_once('Constant.class');
+require_once('DB.inc');
+require_once('lib/Hash.class');
+require_once('lib/Thumb.class');
+
+class MyWeb {
+	var	$request = null; 
+	var	$server = null;
+	var	$smarty	= null;
+	var	$smarty_class_file	= 'lib/MySmarty.class';
+	var	$db	= null;
+	var	$db_class_file	= 'lib/MyDb.class';
+	var $dbname = _DBNAME;
+	var $dbhost = _DBHOST;
+	var $dbuser = _DBUSER;
+	var $dbpass = _DBPASS;
+	var $dbencode = _ENCODE;
+	
+	var $check = null;
+	var	$check_class_file	= 'lib/MyCheck.class';
+	
+	var	$session =	null;
+	var	$session_class_file = 'lib/Session.class';
+	
+	var	$mail = null;
+	var	$mail_class_file	= 'lib/Mail.class';
+	var $rowCounts;
+	var $curPage;
+	var $rowsPerPage=ROWS_PER_PAGE;
+	var $maxShowPages=VIEW_MAX_PAGE;	
+	var $maxPage;
+	var $page_results;
+	
+	function MyWeb (&$server,&$request) {
+	
+		$this->server = new HashClass($server);
+		$this->request = new HashClass($request);
+		$this->SystemAdmin();
+	}
+	
+	function Display($layoutFlg = null,$template_name = null,$debug = null) {
+		$smarty = &$this->getSmartyInstance();
+		$assign = new HashClass();
+		$smarty->assign($assign->Get());
+		if ( !$template_name  ) {
+			
+			$tmp=explode('.',basename($this->server->Get("SCRIPT_FILENAME")));
+			$template_name = array_shift($tmp) . '.tpl';
+		}
+		$smarty->default_modifiers = array(
+									'$' => 'escape:"html"',
+									'foreach'=> 'smarty:"nodefaults"',
+									'section'=> 'smarty:"nodefaults"'
+									);
+		$smarty->assign("template_name",$template_name);
+		$action = basename($_SERVER["SCRIPT_FILENAME"]);
+		$smarty->assign("action",$action);
+		$smarty->assign("pageFlag",$this->getPageFlag($action));
+		if($layoutFlg==1){
+			$smarty->display("layout.tpl");
+		}
+		else 
+		{
+			$smarty->display($template_name);	
+		}
+	}
+	
+	function &getSmartyInstance() {
+		if ( !is_object($this->smarty) ) {
+			require_once($this->smarty_class_file);
+			$tmp=explode(".",basename($this->smarty_class_file));
+			$class = array_shift($tmp);
+			$this->smarty = new $class();
+			$this->RegisterSmarty($this->smarty);
+		}
+		return $this->smarty;
+	}
+	
+	function &getDBInstance() {
+		if ( !is_object($this->db) ) {
+			require_once($this->db_class_file);
+			$tmp=explode(".",basename($this->db_class_file));
+			$class = array_shift($tmp);
+			$this->db = new $class($this->dbhost,$this->dbuser,$this->dbpass,$this->dbname,$this->dbencode);
+		}
+		return $this->db;
+	}
+	
+	function &getCheckInstance() {
+		if ( !is_object($this->check) ) {
+			require_once($this->check_class_file);
+			$tmp=explode(".",basename($this->check_class_file));
+			$class = array_shift($tmp);
+			$this->check = new $class();
+		}
+		return $this->check;
+	}
+	
+	function &getMailInstance() {
+		if ( !is_object($this->mail) ) {
+			require_once($this->mail_class_file);
+			$tmp=explode(".",basename($this->mail_class_file));
+			$class = "Aeria_" . array_shift($tmp);
+			$this->mail = new $class();
+		}
+		return $this->mail;
+	}
+	
+	function SystemAdmin(){
+		if(strpos($_SERVER['SCRIPT_NAME'],"login.php")){				
+			return;
+		}
+		
+		if (strpos($_SERVER['SCRIPT_FILENAME'],"admin/") !== false){
+			if(!empty($_SESSION[_SESSION_ADMIN_LOGIN])){
+				$session = $_SESSION[_SESSION_ADMIN_LOGIN];
+				$smarty = &$this->getSmartyInstance();
+				$smarty->assign("_admin_login",$session);
+			}else{	
+				$this->Location("login.php");
+			}
+		}
+		else 
+		{
+			if(!empty($_SESSION[_SESSION_LOGIN])){
+				$session = $_SESSION[_SESSION_LOGIN];
+				$smarty = &$this->getSmartyInstance();
+				$smarty->assign("_login",$session);
+			}
+			$this->insert_accesslog();
+		}
+	}
+	
+	function insert_accesslog()
+	{
+		global $db_accesslog;
+		$dbclass = &$this->getDBInstance();
+		$form=array();
+		$form['access_ip']=$this->getIP();
+		if($form['access_ip']=='unknown')
+		{
+			$form['access_ip']="000.000.000.000";
+		}
+		
+		if ($form['access_ip']!=$this->SessionGet(_SESSION_ACCESSLOG_URL)) 
+		{
+			$form['code']=$this->getCode($form['access_ip']);
+			if(empty($form['code']))
+			{
+				$form['code']='99';
+			}
+			$form['access_time']=date('Y-m-d H:i:s', $_SERVER["REQUEST_TIME"]);	
+			$dbclass->SQLInsert ( _TABLE."accesslog", $form, array_keys($db_accesslog) );
+		}
+		$this->SessionSet(_SESSION_ACCESSLOG_URL,$form['access_ip']);
+	}
+	
+	function getIP(){
+		if (getenv("HTTP_CLIENT_IP") && strcasecmp(getenv("HTTP_CLIENT_IP"), "unknown"))
+			$ip = getenv("HTTP_CLIENT_IP");
+		else if (getenv("HTTP_X_FORWARDED_FOR") && strcasecmp(getenv("HTTP_X_FORWARDED_FOR"), "unknown"))
+			$ip = getenv("HTTP_X_FORWARDED_FOR");
+		else if (getenv("REMOTE_ADDR") && strcasecmp(getenv("REMOTE_ADDR"), "unknown"))
+			$ip = getenv("REMOTE_ADDR");
+		else if (isset($_SERVER['REMOTE_ADDR']) && $_SERVER['REMOTE_ADDR'] && strcasecmp($_SERVER['REMOTE_ADDR'], "unknown"))
+			$ip = $_SERVER['REMOTE_ADDR'];
+		else
+			$ip = "unknown";
+		return $ip;
+	}
+	
+	function get_client_ip($type = 0) {
+		
+		$type       =  $type ? 1 : 0;
+		static $ip  =   NULL;
+		if ($ip !== NULL) return $ip[$type];
+		if (isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+			$arr    =   explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
+			$pos    =   array_search('unknown',$arr);
+			if(false !== $pos) unset($arr[$pos]);
+			$ip     =   trim($arr[0]);
+		}elseif (isset($_SERVER['HTTP_CLIENT_IP'])) {
+			$ip     =   $_SERVER['HTTP_CLIENT_IP'];
+		}elseif (isset($_SERVER['REMOTE_ADDR'])) {
+			$ip     =   $_SERVER['REMOTE_ADDR'];
+		}
+		// IP地址合法验证
+		$long = ip2long($ip);
+		$ip   = $long ? array($ip, $long) : array('0.0.0.0', 0);
+		return $ip[$type];
+	}
+	
+	function getCode($ip)
+	{
+		$dbclass = &$this->getDBInstance();
+		$code='';
+		//
+		$pattern="/\A((([0-9]?[0-9])|(1[0-9]{2})|(2[0-4][0-9])|(25[0-5]))\.){3}(([0-9]?[0-9])|(1[0-9]{2})|(2[0-4][0-9])|(25[0-5]))\Z/";
+		if(preg_match($pattern,$ip)&&$ip!="")
+		{
+			$ip_arr = explode(".",$ip);
+			$ipnum = 0;
+			//
+			foreach($ip_arr as $i=>$s)
+				{ $ipnum += $s*pow(256,3-$i); }
+			$sql="select code from "._TABLE."ip_address where ip_begin <= '".$ipnum."' and ip_end >= '".$ipnum."'";
+			$code=$dbclass->GetOne($sql);
+		}
+		return $code;
+	}
+	
+	function Location($url = null){ 
+	
+		$location = null;
+
+		if ( !$url) {
+			$url = $this->server->Get('PHP_SELF');
+		}
+		elseif ( substr($url,0,1) == '?' ) {
+			$url = $this->server->Get('PHP_SELF') . $url;
+		}
+
+		if ( substr($url,0,7) === 'http://' or substr($url,0,8) === 'https://' ) {
+			$location = $url;
+		}
+		else {
+
+			$port = null;
+
+			if ( $this->server->Get('SERVER_PORT') == 443 ) {
+				$protocol = 'https://';
+			}	
+			elseif ( $this->server->Get('SERVER_PORT') == 80 ) {
+				$protocol = 'http://';
+			}
+			else {
+				$protocol = 'http://';
+				$port = ':'.$this->server->Get('SERVER_PORT');
+			}
+
+			$dir = dirname($this->server->Get('SCRIPT_NAME'));
+			if ( $dir === "/" ) {
+				$dir = "";
+			}
+
+			if ( substr($url,0,2) === './' ) {
+				if ( $dir ) {
+					$location = $protocol . $this->server->Get('HTTP_HOST') . $port . '/' . $dir	. '/' . basename($url);
+				}
+				else {
+					$location = $protocol . $this->server->Get('HTTP_HOST') . $port . '/' . basename($url);
+				}
+			}
+			elseif ( substr($url,0,1) === "/" ) {
+				$location = $protocol . $this->server->Get('HTTP_HOST') . $port . $url;
+			}
+			else {
+				$location = $protocol . $this->server->Get('HTTP_HOST')  . $dir . '/' . $url;
+			}
+
+		}
+		
+		header("Location: $location");
+		ob_end_flush();
+	}
+
+	function SetTextHeader($FileName="",$Size=0)
+	{
+		if (headers_sent()==false){
+			header("Content-type: application/octet-stream; name=\"$FileName\"");
+			header("Content-disposition: attachment; filename=\"$FileName\"");
+			if($Size) header("Content-length: $Size");
+		}
+	}
+	
+	function getRegCSVStr($inStr){
+		return '"'.str_replace('"', '""', $inStr).'"';
+	}
+	
+	function setOrderBy(&$form,$ordDefault)
+	{
+		$smarty = &$this->getSmartyInstance();
+		$ascdesc="asc";
+		if(isset($form['ordField']) && trim($form['ordField']) !="")
+		{
+			$ordField=$form['ordField'];
+			if(strripos($form['ordField'],' asc'))
+				$ascdesc="desc";
+			elseif(strripos($form['ordField'],' desc'))
+				$ascdesc="asc";
+			$activeField=str_replace(' asc','',str_replace(' desc','',$form['ordField']));
+		}
+		else
+		{
+			$ordField=$ordDefault." desc";
+			$activeField=$ordDefault;
+		}
+		$smarty->assign("ascdesc",$ascdesc);
+		$smarty->assign("ordField",$ordField);
+		$smarty->assign("activeField",$activeField);
+		$smarty->assign("sortAD","asc");
+		return  $ordField;
+	}
+
+	function getPageListLine($action,$maxRowCount,$curPage=1,$limit=null,$hidName=null)
+	{
+		$str="";
+		$str_tmp="";
+		$hidName_conv = $hidName ? ",'','".$hidName."'" : "";
+		
+		$shownum=VIEW_MAX_PAGE;
+		if($limit==""){
+			$rowsPerPage = ROWS_PER_PAGE;
+		}else{
+			$rowsPerPage = $limit;
+		}
+		if($curPage=="" || $curPage<=0){
+			$curPage=1;
+		}
+		
+		if ($maxRowCount % $rowsPerPage==0){
+		   $maxPage = Floor($maxRowCount / $rowsPerPage);
+		}else{
+		   $maxPage = Floor($maxRowCount / $rowsPerPage) + 1;
+		}
+
+		if($maxPage>0){
+			if($curPage==1){
+			}else{
+				$curPages=$curPage - 1 ;
+			}
+			$showflag=1;
+			$showflag=$shownum / 2;
+			if($curPage-$showflag<=0){
+				$showstartrows=1;
+			}else{
+				$showstartrows=$curPage-$showflag;
+			}
+			if($showstartrows+$shownum-1>$maxPage){
+				$showendrows=$maxPage;
+			}else{
+				$showendrows=$showstartrows+$shownum-1;
+			}
+		}
+		
+		if($maxPage>1){
+			$str.= "<div id=\"pages\">";
+			if($curPage==1){
+				$str.= "<a href=\"javascript:go2page(1);\">&laquo; ".FIRSTPAGE."</a>";
+				$str.= "<a href=\"javascript:go2page(1);\">&laquo; ".PAGEUP."</a>";
+			}else{
+				$str.= "<a href=\"javascript:go2page(1);\">&laquo; ".FIRSTPAGE."</a>";
+				$str.= "<a href=\"javascript:go2page(".($curPage-1).");\">&laquo; ".PAGEUP."</a>";
+			}
+			$str_tmp .="";
+			$str.="<span class=\"number\">";
+			while($showstartrows<=$showendrows){
+				if($showstartrows!=$curPage){
+					$str.="<a href=\"javascript:go2page(".$showstartrows.")\" >".$showstartrows."</a>".$str_tmp;
+				}else{
+					$str.="<a href=\"javascript:go2page(".$showstartrows.")\" class=\"current\" >".$showstartrows."</a>".$str_tmp;
+				}
+				$showstartrows++;
+			}
+			$str.="</span>";
+			$str = rtrim($str,$str_tmp);
+			if($curPage< $maxPage)
+			{
+				$str.= "<a href=\"javascript:go2page(".($curPage+1).");\">".PAGEDOWN." &raquo;</a>&nbsp;";
+				$str.= "<a href=\"javascript:go2page(".$maxPage.");\">".LASTPAGE." &raquo;</a>";
+			}
+			else
+			{ 
+				$str.= "<a href=\"javascript:go2page(".$maxPage.");\">".PAGEDOWN." &raquo;</a>";
+				$str.= "<a href=\"javascript:go2page(".$maxPage.");\">".LASTPAGE." &raquo;</a>";
+			}
+			$str.= "</div>";
+		}
+		return $str;
+	}
+	
+	
+	
+	function setSql($sql,$params = array()) {
+		$split = explode("?",$sql);
+		$return_string = null;
+		$params = (array)$params;
+		foreach ( $split as $value )  {
+			$return_string .= $value;
+			if ( count($params) ) {
+				$data = array_shift($params);
+				if(is_array($data)){
+					$return_string .= "('".implode("','",$data)."')";
+				}else{
+					$return_string .= "'" . mysql_escape_string($data) . "'";
+				}
+				
+			}
+		}
+		return $return_string;
+	}
+	
+	function &getSessionInstance() {
+		if ( !is_object($this->session) ) {
+			require_once($this->session_class_file);
+			$tmp=explode(".",basename($this->session_class_file));
+			$class = array_shift($tmp);
+			$this->session = new $class();
+		}
+		return $this->session;
+	}
+	
+	function SessionSet($name,$form) {
+		$session = &$this->getSessionInstance();
+		$session->Set($name,$form);
+	}
+
+	function SessionGet($name) {
+		$session = &$this->getSessionInstance();
+		return $session->Get($name);
+	}
+
+	function SessionDelete($name) {
+		$session = &$this->getSessionInstance();
+		$session->Delete($name);
+	}
+	
+	function getHashValue($array,$value){
+		$value = trim($value);		
+		if(count($array)){						
+			if (!empty($value) || is_numeric($value)) {						
+				if(isset($array[$value]))
+				{					
+					return $array[$value];
+				}else {					
+					return '';
+				}
+			}
+		return $array;
+		}else{
+			return '';
+		}
+		
+	}
+	
+	function getExtension($fileName)
+	{
+		return substr($fileName,strrpos($fileName,'.'));
+	}
+	
+	function uploadFile($srcPath,$desPath,$fileName,$sizeArr)
+	{
+		if(!file_exists($desPath))
+			mkdir($desPath,0777);
+		$s = new ThumbHandler(); 
+		$s->setImgDisplayQuality(100);
+		$s->setSrcImg($srcPath);
+		$s->setDstImg($desPath.$fileName);
+		$s->createImg($sizeArr["width"],$sizeArr["height"]);
+	}
+	
+	function imgScaling($image,$save_path,$fileName,$width,$height)
+	{
+		if(!file_exists($save_path))
+			mkdir($save_path,0777);
+		$s = new ThumbHandler(); 
+		$s->setImgDisplayQuality(100);
+		$s->setSrcImg($image);
+		$s->setDstImg($save_path.$fileName);
+		$s->createImg($width,$height);
+	}
+	
+	function myGetImgSize($imgFile,$width,$height)
+	{
+		$imgSize=array();
+		$arr=getimagesize($imgFile); 
+		$imgWidth=$arr[0];
+		$imgHeight=$arr[1];	
+		
+		if($imgWidth>0 && $imgHeight>0)
+		{
+			if($imgWidth/$imgHeight >= $width/$height)
+			{
+				if($imgWidth>$width)
+				{
+					$imgSize["width"]=$width;
+					$imgSize["height"]=($imgHeight*$width)/$imgWidth;
+				}
+				else
+				{
+					$imgSize["width"]=$imgWidth;
+					$imgSize["height"]=$imgHeight;
+				}
+			}
+			else
+			{
+				if($imgHeight>$height)
+				{
+					$imgSize["height"]=$height;
+					$imgSize["width"]=($imgWidth*$height)/$imgHeight;
+				}
+				else
+				{
+					$imgSize["width"]=$imgWidth;
+					$imgSize["height"]=$imgHeight;
+				}
+			}
+		}
+		return $imgSize;
+	}
+	
+	function DelFile($dir,$delFileName,$mode="==")
+	{
+		$delFileNameArr=array();
+		if(!is_array($delFileName))
+		{
+			$delFileNameArr[0]=$delFileName;
+		}
+		else 
+		{
+			$delFileNameArr=$delFileName;
+		}
+		$handler = opendir($dir);
+		while( ($filename = readdir($handler)) !== false )
+		{
+		  if($filename != "." && $filename != "..")
+		  {
+		  	$temp_filename=substr($filename,0,strrpos($filename,"."));
+		  	if($mode=="==")
+		  	{
+	  			if(in_array($temp_filename,$delFileNameArr))
+	  			{
+	  				unlink($dir.$filename);
+	  			}
+		  	}
+		  }
+		}
+		closedir($handler);
+	}
+	
+	function DelTemFile($dir)
+	{
+		$handler = opendir($dir);
+		while( ($filename = readdir($handler)) !== false )
+		{
+		  if($filename != "." && $filename != "..")
+		  {
+		  	if(mktime(0, 0, 0, date("m"), date("d")-1,date("Y"))>filemtime($dir.$filename))
+		  	{
+		  		unlink($dir.$filename);
+		  	}
+		  }
+		}
+		closedir($handler);
+	}
+	
+	function DelDir($dir)
+	{
+		$handler = opendir($dir);
+		while( ($filename = readdir($handler)) !== false )
+		{
+		  if($filename != "." && $filename != "..")
+		  {
+		  	unlink($dir.$filename);
+		  }
+		}
+		closedir($handler);
+		if (is_dir($dir))
+ 			rmdir($dir);//
+	}
+	
+	function DelOneFile($file)
+	{
+		if(file_exists($file))
+			unlink($file);
+	}
+	
+	function MailSend($mail_from,$mail_to,$form,$subject,$filename=NULL,$return_path=NULL,$cc=NULL,$bcc=NULL,$header=NULL) {
+		if(_MAIL_ON_OFF == "0")
+			return false;
+		$smarty = &$this->getSmartyInstance();
+		$smarty->assign($form);
+		
+		$mail = &$this->getMailInstance();
+		$mail->SetTo($mail_to);
+		$mail->SetSubject($subject);
+		$mail->SetFrom($mail_from);
+
+		if ($return_path) {
+			$mail->SetReturnPath($return_path);
+		}
+		if ($cc!=NULL) {
+			$mail->SetCc($cc);
+		}
+		if ($bcc!=NULL) {
+			$mail->SetBcc($bcc);
+		}
+
+		if (!$filename) {
+			$tmp=explode('.',basename($this->server->Get('SCRIPT_FILENAME')));
+			$filename = array_shift($tmp) . '_mail.tpl';
+		}
+
+		if ($header=='html') {
+			$mail->SetHTMLBody(mb_convert_kana($smarty->fetch($filename),"KV"));
+		}
+		else  {
+			$mail->SetBody(mb_convert_kana($smarty->fetch($filename),"KV"));
+		}
+		$mail->Send();
+	}
+	
+	
+// ------------------------------------------------------------------------	
+
+	function RegisterSmarty(&$smarty) {
+		$smarty->register_modifier('getPermission',array(&$this,'getPermission'));
+		$smarty->register_modifier('get_default_option',array(&$this,'get_default_option'));
+		$smarty->register_modifier('getNewsCategory',array(&$this,'getNewsCategory'));
+		$smarty->register_modifier('getDjsCategory',array(&$this,'getDjsCategory'));
+		$smarty->register_modifier('getJobCategory',array(&$this,'getJobCategory'));
+		$smarty->register_modifier('getCaseCategory',array(&$this,'getCaseCategory'));
+		$smarty->register_modifier('getVideoCategory',array(&$this,'getVideoCategory'));
+		$smarty->register_modifier('getMemberPermission',array(&$this,'getMemberPermission'));
+		$smarty->register_modifier('getSex',array(&$this,'getSex'));
+		$smarty->register_modifier('getProvinceCode',array(&$this,'getProvinceCode'));
+		$smarty->register_modifier('getParentId',array(&$this,'getParentId'));
+		$smarty->register_modifier('getSideBar',array(&$this,'getSideBar'));
+		$smarty->register_modifier('getServiceCategory',array(&$this,'getServiceCategory'));
+		$smarty->register_function('getNewMessage',array(&$this,'getNewMessage'));
+		$smarty->register_modifier('getMarketCategory',array(&$this,'getMarketCategory'));
+		$smarty->register_modifier('getCorpCategory',array(&$this,'getCorpCategory'));
+		$smarty->register_modifier('getExperCategory',array(&$this,'getExperCategory'));
+		$smarty->register_modifier('getSoftCategory',array(&$this,'getSoftCategory'));
+		$smarty->register_modifier('getPicCategory',array(&$this,'getPicCategory'));
+		$smarty->register_modifier('getDescCategory',array(&$this,'getDescCategory'));
+		$smarty->register_modifier('getSpecialCategory',array(&$this,'getSpecialCategory'));
+		$smarty->register_modifier('getH5Category',array(&$this,'getH5Category'));
+		$smarty->register_modifier('getMediaCategory',array(&$this,'getMediaCategory'));
+                
+	}
+	
+	function get_default_option() {			
+		$array = array(
+			'0' => "--请选择类别--"
+		);
+		return $array;
+	}
+
+	function getPermission($value=null) {
+		$array = array(
+			0 => "管理",
+			1 => "超级管理"
+			);
+		return $this->getHashValue($array,$value);
+		
+	}
+	
+	function getNewsCategory($value=null) {
+		$dbclass = &$this->getDBInstance();
+		$sql = "select category_id ,category_name from "._TABLE."news_category";
+		$sql .=" order by order_num desc, update_time desc ";
+		$list = $dbclass->GetHash($sql);
+		return $this->getHashValue($list,$value);
+	}
+
+	function getDjsCategory($value=null) {
+		$dbclass = &$this->getDBInstance();
+		$sql = "select category_id ,category_name from "._TABLE."djs_category";
+		$sql .=" order by order_num desc, update_time desc ";
+		$list = $dbclass->GetHash($sql);
+		return $this->getHashValue($list,$value);
+	}
+
+	function getJobCategory($value=null) {
+		$dbclass = &$this->getDBInstance();
+		$sql = "select category_id ,category_name from "._TABLE."job_category";
+		$sql .=" order by order_num desc, update_time desc ";
+		$list = $dbclass->GetHash($sql);
+		return $this->getHashValue($list,$value);
+	}
+	
+	function getCaseCategory($value=null) {
+		$dbclass = &$this->getDBInstance();
+		$sql = "select category_id ,category_name from "._TABLE."case_category";
+		$sql .=" order by order_num, update_time desc ";
+		$list = $dbclass->GetHash($sql);
+		return $this->getHashValue($list,$value);
+	}
+	
+	function getMarketCategory($value=null) {
+		$dbclass = &$this->getDBInstance();
+		$sql = "select category_id ,category_name from "._TABLE."market_category";
+		$sql .=" order by order_num, update_time desc ";
+		$list = $dbclass->GetHash($sql);
+		return $this->getHashValue($list,$value);
+	}
+	
+	
+	function getCorpCategory($value=null) {
+		$dbclass = &$this->getDBInstance();
+		$sql = "select corp_id ,corp_name from "._TABLE."corp";
+		$sql .=" order by order_num desc ";
+		$list = $dbclass->GetHash($sql);
+		return $this->getHashValue($list,$value);
+	}
+	
+	function getExperCategory($value=null) {
+		$dbclass = &$this->getDBInstance();
+		$sql = "select category_id ,category_name from "._TABLE."exper_category";
+		$sql .=" order by order_num desc ";
+		$list = $dbclass->GetHash($sql);
+		return $this->getHashValue($list,$value);
+	}
+	
+	function getSoftCategory($value=null) {
+		$dbclass = &$this->getDBInstance();
+		$sql = "select sub.category_id
+				,concat((select main.corp_name from "._TABLE."corp main where main.corp_id=sub.parent_id ),'---',sub.category_name) as category_name
+				from "._TABLE."corp_category sub
+				where sub.category_id <> '0' 
+				order by sub.category_id";
+		
+		$list = $dbclass->GetHash($sql);
+		return $this->getHashValue($list,$value);
+	}
+	
+    function getSpecialCategory($value=null) {
+		$dbclass = &$this->getDBInstance();
+		$sql = "select market_id,market_name from "._TABLE."market";
+		$sql .=" order by order_num desc, update_time desc ";
+		$list = $dbclass->GetHash($sql);
+		return $this->getHashValue($list,$value);
+	}
+	
+	function getH5Category($value=null) {
+		$dbclass = &$this->getDBInstance();
+		$sql = "select category_id ,category_name from "._TABLE."h5_category";
+		$sql .=" order by order_num";
+		$list = $dbclass->GetHash($sql);
+		return $this->getHashValue($list,$value);
+	}
+	
+	
+	function getPicCategory($value=null) {
+		$dbclass = &$this->getDBInstance();
+		$sql = "select category_id ,category_name from "._TABLE."pic_category";
+		$sql .=" order by order_num, update_time desc ";
+		$list = $dbclass->GetHash($sql);
+		return $this->getHashValue($list,$value);
+	}
+	
+	 function getDescCategory($value=null) {
+		$dbclass = &$this->getDBInstance();
+		$sql = "select image_id,image_name from "._TABLE."picnews";
+		$sql .=" order by order_num desc, update_time desc ";
+		$list = $dbclass->GetHash($sql);
+		return $this->getHashValue($list,$value);
+	}
+    
+	function getMediaCategory($value=null) {
+		$dbclass = &$this->getDBInstance();
+		$sql = "select category_id ,category_name from "._TABLE."media_category";
+		$sql .=" order by order_num desc, update_time desc ";
+		$list = $dbclass->GetHash($sql);
+		return $this->getHashValue($list,$value);
+	}
+	
+	function getVideoCategory($value=null) {
+		$dbclass = &$this->getDBInstance();
+		$sql = "select category_id ,category_name from "._TABLE."video_category";
+		$sql .=" order by order_num, update_time desc ";
+		$list = $dbclass->GetHash($sql);
+		return $this->getHashValue($list,$value);
+	}
+	
+	function getFirstSubId($parentId,$flag) {
+		$dbclass = &$this->getDBInstance();
+		$sql = "select category_id from "._TABLE.$flag;
+		$sql .=" where parent_id='".$parentId."'";
+		$sql .=" order by order_num desc, update_time desc ";
+		$sql .=" limit 0 , 1";
+		$category_id = $dbclass->GetOne($sql);
+		return $category_id;
+	}
+	
+	function getParentId($categoryId,$flag) {
+		$dbclass = &$this->getDBInstance();
+		$sql = "select parent_id from "._TABLE.$flag;
+		$sql .=" where category_id='".$categoryId."'";
+		$parent_id = $dbclass->GetOne($sql);
+		return $parent_id;
+	}
+	
+	function getMemberPermission($value=null) {
+		$array = array(
+			0 => "普通成员",
+			1 => "VIP 成员"
+			);
+		return $this->getHashValue($array,$value);
+	}
+	
+	function getSex($value=null) {
+		$array = array(
+			0 => "男性",
+			1 => "女性"
+			);
+		return $this->getHashValue($array,$value);
+	}
+	
+
+	function getServiceCategory($value=null) {
+		$dbclass = &$this->getDBInstance();
+		$sql = "select category_id ,category_name from "._TABLE."service_category";
+		$sql .=" order by order_num desc, update_time desc ";
+		$list = $dbclass->GetHash($sql);
+		return $this->getHashValue($list,$value);
+	}
+       
+	function getNewMessage() {
+		$dbclass = &$this->getDBInstance();
+		$sql = "select count(message_id) from "._TABLE."message where read_state='0'";
+		$count = $dbclass->GetOne($sql);
+		return $count;
+	}
+        
+	function getProvinceCode($value=null) {
+		$dbclass = &$this->getDBInstance();
+		$sql = "select province_code,province from "._TABLE."province_code order by id ";
+		$list = $dbclass->GetHash($sql);
+		return $this->getHashValue($list,$value);
+	}
+	
+	function getPageFlag($value=null){
+		$pageFlag=0;
+		$array = array(
+			1 => array("index"),
+			2 => array("news","newslist","picnews","video","videolist","search"),
+			3 => array("hardware","ExperService","newmedia"),
+			4 => array("market","marketing_list"),
+			5 => array("develop","notice","report","way"),
+			7 => array("about","ceospeech","organization","image","culture","certification","history","law","service","map","joblist","security"),
+			8 => array("message","contact"),
+			9 => array("training","trainlist"),
+			10=> array("tech","softdownload","introlist","policylist","customerlist")
+			);
+		if(!empty($value))
+		{
+			foreach ($array as $k=>$v)
+			{
+				if(in_array(str_replace(".php" ,"",$value),$v))
+				{
+					$pageFlag=$k;
+					break;
+				}	
+			}
+			return $pageFlag;
+		}
+		else
+			return $array;
+	}
+	
+	function getPageListLineHtdocs($action,$maxRowCount,$curPage=1,$rows_per_page,$limit=null,$hidName=null)
+	{
+		$str="";
+		$hidName_conv = $hidName ? ",'','".$hidName."'" : "";
+		
+		$shownum=VIEW_MAX_PAGE;
+		if($limit==""){
+			$rowsPerPage = $rows_per_page;
+		}else{
+			$rowsPerPage = $limit;
+		}
+		if($curPage=="" || $curPage<=0){
+			$curPage=1;
+		}
+		
+		if ($maxRowCount % $rowsPerPage==0){
+		   $maxPage = Floor($maxRowCount / $rowsPerPage);
+		}else{
+		   $maxPage = Floor($maxRowCount / $rowsPerPage) + 1;
+		}
+
+		if($maxPage>0){
+			if($curPage==1){
+			}else{
+				$curPages=$curPage - 1 ;
+			}
+			$showflag=1;
+			$showflag=$shownum / 2;
+			if($curPage-$showflag<=0){
+				$showstartrows=1;
+			}else{
+				$showstartrows=$curPage-$showflag;
+			}
+			if($showstartrows+$shownum-1>$maxPage){
+				$showendrows=$maxPage;
+			}else{
+				$showendrows=$showstartrows+$shownum-1;
+			}
+		}
+		
+		if($maxPage>1){
+			if($curPage==1){
+				$str.= "<a href=\"javascript:void(0)\"> << </a>";
+				$str.= "<a href=\"javascript:void(0)\"> < </a>";
+			}else{
+				$str.= "<a href=\"javascript:go2page(1);\"> << </a>";
+				$str.= "<a href=\"javascript:go2page(".($curPage-1).$hidName_conv.");\"> < </a>";
+			}
+			while($showstartrows<=$showendrows){
+				if($showstartrows!=$curPage){
+					$str.="<a href=\"javascript:go2page(".$showstartrows.$hidName_conv.")\" >".$showstartrows."</a>";
+				}else{
+					$str.="<strong>".$showstartrows."</strong>";
+				}
+				$showstartrows++;
+			}
+			if($curPage< $maxPage)
+			{
+				$str.= "<a href=\"javascript:go2page(".($curPage+1).$hidName_conv.");\"> > </a>";
+				$str.= "<a href=\"javascript:go2page(".$maxPage.$hidName_conv.");\"> >> </a>";
+			}
+			else
+			{
+				$str.= "<a href=\"javascript:void(0)\"> > </a>";
+				$str.= "<a href=\"javascript:void(0)\"> >> </a>";
+			}
+			
+		}
+		return $str;
+	}
+	
+	function getSideBar($value=null) {
+	}
+	
+	
+}
+
+?>

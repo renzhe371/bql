@@ -1,0 +1,69 @@
+<?php
+
+class HashClass {
+	var	$form;
+
+	function HashClass($form = null) {
+		if ( $form ) {
+			$this->form = $form;
+		}
+		else {
+			$this->form = array();
+		}
+	}
+
+	function Get($key = null,$default = null,$null_key = null) {
+		if ( is_null($key) ) {
+			return $this->form;
+		}
+		else {
+			if ( isset($this->form[$key]) && (is_null($null_key) || $this->form[$key] !== $null_key) ) {
+				return $this->form[$key];
+			}
+			else {
+				return $default;
+			}
+		}
+	}
+
+	function &GetRef() {
+		return $this->form;
+	}
+
+	function Set($key = null,$value = null) {
+		if ( is_null($key) ) {
+			if ( is_null($value) ) {
+				$this->form = array();
+			}
+			else {
+				$this->form = array_merge($this->form,$value);
+			}
+		}
+		else {
+			$this->form[$key] = $value;
+		}
+	}
+
+	function ValInc($key,$count = 1) {
+		if ( isset($this->form[$key]) ) {
+			$this->form[$key] += $count;
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
+
+	function ValDec($key,$count = 1) {
+		if ( isset($this->form[$key]) ) {
+			$this->form[$key] -= $count;
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
+
+}
+
+?>

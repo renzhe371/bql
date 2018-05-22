@@ -1,0 +1,96 @@
+@charset "utf-8";
+/*------------------------------------------------------------
+	汎用スタイル
+------------------------------------------------------------*/
+/* 見出し体裁 */
+
+/* テキスト体裁 */
+
+/* テーブル */
+
+/*------------------------------------------------------------
+	便利スタイル
+------------------------------------------------------------*/
+/* リスト */
+/* 画像 */
+
+/* 注意書き */
+
+/* 引用 */
+
+/* float */
+.floatL {
+	float: left;
+}
+
+.floatR {
+	float: right;
+}
+
+/* clearfix */
+	* html .clearFix {
+		zoom: 1;
+	}
+
+	*+html .clearFix {
+		zoom: 1;
+	}
+
+.clearFix:after {
+	height: 0;
+	visibility: hidden;
+	content: ".";
+	display: block;
+	clear: both;
+}
+
+.clear {
+	clear: both;
+}
+
+.zoom {
+	overflow: hidden;
+	zoom: 100%;
+}
+
+.mb5 {
+	margin-bottom: 5px !important;
+}
+.mb10 {
+	margin-bottom: 10px !important;
+}
+.mb15 {
+	margin-bottom: 15px !important;
+}
+.mb20 {
+	margin-bottom: 20px !important;
+}
+.mb25 {
+	margin-bottom: 25px !important;
+}
+.mb30 {
+	margin-bottom: 30px !important;
+}
+.mb35 {
+	margin-bottom: 35px !important;
+}
+.mb40 {
+	margin-bottom: 40px !important;
+}
+.mb45 {
+	margin-bottom: 45px !important;
+}
+
+.mb50 {
+	margin-bottom: 50px !important;
+}
+.mb55 {
+	margin-bottom: 55px !important;
+}
+.mb75 {
+	margin-bottom: 75px !important;
+}
+
+.mb85 {
+	margin-bottom: 85px !important;
+}

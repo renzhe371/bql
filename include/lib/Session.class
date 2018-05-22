@@ -1,0 +1,120 @@
+<?php
+
+class Session {
+
+	var	$sess;
+
+	function Session() {
+		@session_start();
+		$this->sess	= &$_SESSION; 
+	}
+	
+	function Set($name , $value ) {
+		$this->sess[$name] = $value;
+	}
+
+  function Defined( $name ) {
+		if ( isset($this->sess[$name]) ) {
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
+
+	function GetId() {
+		return session_id();
+	}
+
+	function Delete () {
+		$args = func_get_args();
+    foreach ( $args as $value ){
+      if( is_array($value) ){
+        foreach($value as $val){
+					if ( isset($this->sess[$val]) ) {
+          	unset($this->sess[$val]);
+					}
+        }
+      }
+      else{
+				if ( isset($this->sess[$value]) ) {
+			       unset($this->sess[$value]);
+				}
+      }
+    }
+  }
+	
+	function &GetRef($name) {
+		if ( $this->Defined($name) ) {
+			return $this->sess[$name];
+		}
+		else {
+			return false;
+		}
+	}
+	
+	function Get($name) {
+		if ( $this->Defined($name) ) {
+			return $this->sess[$name];
+		}
+		else {
+			return false;
+		}
+	}
+
+	function Clear() {
+		$this->sess = array();
+	} 
+
+	function SetFile($name,&$value) {
+		if ( isset($this->sess['__save__file__']) && isset($this->sess['__save__file__'][$name]) 
+			&& $this->sess['__save__file__'][$name]	
+		) {
+			@unlink($this->sess['__save__file__'][$name]);
+		}
+		$this->sess[$name] = $this->_make_temp_file($name,$value);
+		$this->sess['__save__file__'][$name] = $this->sess[$name];
+	}
+
+	function GetFile($name) {
+		if ( isset($this->sess[$name]) ) {	
+			return $this->_get_temp_file($this->sess[$name]);
+		}
+	}
+
+	function _make_temp_file ( $prefix , &$data ) {
+
+		$tempdir = session_save_path() .'/';
+
+		if ( rand(1,1000) < 10 ) {
+			$dir = dir($tempdir);
+			while ( $entry = $dir->read() ) {
+				if ( preg_match("/^" . $prefix ."_/",$entry) ) {
+					if ( fileatime($tempdir . $entry) < ( time() - (24*60*60) ) ) {
+						unlink($tempdir . $entry);	
+					}
+				}
+			}
+			$dir->close();
+		}
+
+		$filename = tempnam($tempdir,$prefix . "_");
+		$fp = fopen($filename,"w");
+		fwrite($fp,serialize($data));
+		fclose($fp);
+		return $filename;
+
+	}
+
+	function _get_temp_file ( $filename ) {
+
+		$fp = fopen($filename,"r");
+		$data = fread($fp,filesize($filename));
+		fclose($fp);
+		return unserialize($data);
+
+	}
+
+}
+
+?>

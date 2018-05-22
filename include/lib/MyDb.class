@@ -1,0 +1,152 @@
+<?php
+
+class MyDb {
+	
+	var	$conn;
+	var $res;
+	var $dbname = null;
+	var $dbhost = null;
+	var $dbuser = null;
+	var $dbpass = null;
+	var $dbencode = null;
+	
+	function MyDb($dbhost,$dbuser,$dbpass,$dbname,$dbencode) {
+		$this->dbname = $dbname;
+		$this->dbhost = $dbhost;
+		$this->dbuser = $dbuser;
+		$this->dbpass = $dbpass;
+		$this->dbencode = $dbencode;
+		$this->conn = $this->Connect_DB();
+	}
+	
+	function Connect_DB()
+	{
+		$conn = mysql_connect($this->dbhost,$this->dbuser,$this->dbpass);
+		if ( !is_resource($conn) ) {
+			return $this->_error_connect();
+		}
+		mysql_select_db($this->dbname,$conn);
+		mysql_query($this->dbencode);
+		return $conn;
+	}
+	
+	function _error($sql) {
+		print "SQL Error:" . $sql;
+		exit();
+	}
+
+	function _error_connect() {
+		print "Connect Error:".  mysql_error();
+		exit();
+	}
+	
+	
+  	
+  	function getRes($sql)
+  	{
+		$res = @mysql_query($sql,$this->conn);
+
+		if ( is_resource($res) ) {
+			$this->res=$res;
+			return true;
+		}
+		else {
+			return $this->_error($sql);
+		}	
+  	}
+  	
+  	function SQLInsert($table,$valueArr,$colArr) {
+  		
+		$value_array = array();
+		$col_array = array();
+		foreach ( $colArr as $key ) {
+			if ( isset($valueArr[$key])) {
+				array_push($col_array,$key);
+				array_push($value_array,$valueArr[$key]);
+			}
+		} 
+		$sql = "INSERT INTO " . $table;
+		$sql .= " (" . join(',',$col_array) . ")";
+		$sql .= " VALUES ";
+		$sql .= " ('" . join("','",$value_array) . "')";
+		return $this->ExecuteSQL($sql);
+	}
+	
+	function SQLUpdate($table,$valueArr,$colArr,$where=null){
+
+		$push_array = array();
+		foreach ( $colArr as $key ) {
+			if ( isset($valueArr[$key])) {
+				
+				array_push($push_array,$key."='".$valueArr[$key]."'");
+			}
+		} 
+		
+		$sql = "UPDATE " . $table . " SET ";
+		$sql .= " " . join(',',$push_array) . " ";
+		if(!empty($where))
+			$sql .= " WHERE " . $where;
+		return $this->ExecuteSQL($sql);
+	}
+	
+	function SQLDelete($table,$where ) {
+		$sql = "DELETE FROM $table ";
+		$sql .= " WHERE " . $where;
+		return $this->ExecuteSQL($sql);
+	}
+	
+	function ExecuteSQL($sql){
+		if(!mysql_query($sql,$this->conn))
+			$this->_error($sql);
+	}
+	
+	function GetAll($sql)
+  	{
+	  	if($this->getRes($sql))
+	  	{
+	  		$rec=mysql_query($sql,$this->conn);
+	  		$tmpi=0;
+			$returnArr=array();
+			while($row=mysql_fetch_array($rec,MYSQL_ASSOC)){
+				$returnArr[$tmpi]=$row;
+				$tmpi++;
+			}
+			return $returnArr;
+	  	}
+  	}
+	
+	function GetOne($sql)
+  	{
+	  	if($this->getRes($sql))
+	  	{
+	  		$rec=mysql_query($sql,$this->conn);
+			$row=mysql_fetch_array($rec,MYSQL_NUM);
+			return $row[0];
+	  	}
+  	}
+	
+	function GetRow($sql)
+	{
+		if($this->getRes($sql))
+	  	{
+	  		$rec=mysql_query($sql,$this->conn);
+			$row=mysql_fetch_array($rec,MYSQL_ASSOC);
+			return $row;
+	  	}
+	}
+	
+	function GetHash($sql) {
+		$result=$this->GetAll($sql);
+		$hash = array();
+		if(!empty($result))
+		{
+			for ( $i = 0 ; $i < count($result) ; $i++ ) {
+				list($key,$value) = array_values($result[$i]);
+				$hash[$key] = $value;
+			}	
+		}
+		
+		return $hash;
+	}
+}
+?>

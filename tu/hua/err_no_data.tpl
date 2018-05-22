@@ -1,0 +1,1 @@
+<div style="color:#ff0000"><{$smarty.const.ERR_NO_DATA}></div>

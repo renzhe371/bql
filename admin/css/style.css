@@ -1,0 +1,209 @@
+@charset "utf-8";
+@import "../common/css/0-import.css";
+
+/*------------------------------------------------
+	#conts
+------------------------------------------------*/
+#conts .conts_content table {
+	border-collapse: collapse;
+	width: 100%;
+	border-bottom: 1px solid #CCC;
+}
+#conts .conts_content table th,
+#conts .conts_content table td {
+	font-weight: normal;
+	line-height: 1.3em;
+    padding: 10px;
+    text-align:left;
+}
+#conts .conts_content table th {
+	border-bottom: 1px solid #DDDDDD;
+	font-size: 15px;
+	font-weight: bold;
+	color:#57A000;
+}
+#conts .conts_content table .td_index {
+	border-bottom: 1px solid #DDDDDD;
+	text-align:center;
+}
+#conts .pagination .bulk-actions {
+	padding-top: 20px;
+	width: 300px;
+	float: left;
+}
+#conts .pagination .bulk-actions a {
+	background: #459300 url("../common/images/bg-button-green.gif") repeat-x left top !important;
+	border: 1px solid #459300 !important;
+	color: #FFFFFF !important;
+	cursor: pointer;
+	display: inline-block;
+	font-family: "宋体";
+	font-size: 14px !important;
+	padding: 4px 7px !important;
+	-moz-border-radius:4px 4px 4px 4px;
+}
+#conts .pagination .bulk-actions a:hover {
+	text-decoration: underline;
+}
+#conts #pages {
+	width: 500px;
+	float: right;
+	font-family: "宋体";
+	font-size: 12px;
+	padding: 20px 0 5px;
+	text-align: right;
+}
+#conts #pages a {
+	margin: 0 5px 0 0;
+    padding: 3px 6px;
+}
+#conts #pages .number a {
+	border: 1px solid #DDD;
+	-moz-border-radius: 4px 4px 4px 4px;
+}
+#conts #pages .number a.current {
+	background: #469400 url("../common/images/bg-button-green.gif") repeat-x left top !important;
+	border-color: #459300 !important;
+	color: #FFFFFF !important;
+}
+/*----------------------------------------------*/
+
+.button, #main-content table tfoot td .bulk-actions select, .pagination a.number, form input, form textarea, form .wysiwyg, form select, .dp-popup {
+-moz-border-radius:4px 4px 4px 4px;
+}
+
+#conts #add li input, #conts #add select, #conts #add textarea, #conts #add .wysiwyg {
+	background:url("../common/images/bg-form-field.gif") repeat-x scroll left top #FFFFFF;
+	border: 1px solid #D5D5D5;
+	color: #3333;
+	font-size: 13px;
+	padding: 6px;
+}
+
+#conts #add {
+}
+#conts #add li label {
+	display: block;
+	font-weight: bold;
+	padding: 0 0 10px;
+}
+#conts #add li {
+	line-height: 1.6em;
+     padding: 5px 0 10px;
+}
+#conts #add li p small {
+	color: #777;
+	font-size: 0.75em;
+}
+
+#conts #add input.text-input, 
+#conts #add select, 
+#conts #add textarea, 
+#conts #add .wysiwyg {
+	background: #FFFFFF url("../common/images/bg-form-field.gif") repeat-x left top ;
+	border: 1px solid #D5D5D5;
+	color: #333;
+	font-size: 13px;
+	padding: 6px;
+}
+
+#conts #add li .success {
+	background: #D5FFCE url(../common/images/icons/tick_circle.png) no-repeat left 2px;
+	_background: #D5FFCE url(../common/images/icons/tick_circle.png) no-repeat left 6px;
+	border-color:#9ADF8F;
+	color:#556652;
+	background-color:transparent;
+	margin:0 0 0 5px;
+	padding:2px 0 2px 22px;
+}
+
+#conts #add li .error {
+	padding:2px 0 2px 22px;
+	_padding:2px 0 0px 22px;
+	background: #FFCECE url("../common/images/icons/cross_circle.png") no-repeat left 2px;
+	_background: url("../common/images/icons/cross_circle.png") no-repeat left center;
+	border-color: #DF8F8F;
+	color: #665252;
+	background-color:transparent;
+}
+#conts #add li .button {
+	background: #2D9AA2 url("../common/images/bg-button-green.gif") repeat-x left top !important;
+	border: 1px solid #2D9AA2 !important;
+	color: #FFFFFF !important;
+	cursor: pointer;
+	display: inline-block;
+	font-family: "宋体";
+	font-size: 14px !important;
+	padding: 4px 7px !important;
+}
+#conts #add li select {
+	background: none repeat #FFFFFF;
+	padding: 4px;
+	width: 168px;
+}
+#conts #add li input.small-input {
+    width:25%;
+}
+#conts #add li input.medium-input {
+    width:50%;
+}
+#conts #add li input.large-input {
+    width:97%;
+}
+#conts #add li.border_none input {
+	border: none;
+}
+
+/*------------------------------------------------
+	#search
+------------------------------------------------*/
+
+#search li input, #search select {
+	border: 1px solid #D5D5D5;
+	font-size: 13px;
+	padding: 6px;
+	display:inline;
+}
+
+#search li label {
+	display: inline;
+	font-weight: bold;
+	padding: 0 0 10px;
+}
+#search li {
+	line-height: 1.6em;
+    padding: 5px 0 10px;
+}
+
+#search li .button {
+	background: #459300 url("../common/images/bg-button-green.gif") repeat-x left top !important;
+	border: 1px solid #459300 !important;
+	color: #FFFFFF !important;
+	cursor: pointer;
+	display: inline-block;
+	font-family: "宋体";
+	font-size: 14px !important;
+	padding: 4px 7px !important;
+}
+#search li select {
+	background: none repeat #FFFFFF;
+	padding: 4px;
+	width: 168px;
+}
+#search li input.small-input {
+    width:25%;
+}
+#search li input.medium-input {
+    width:50%;
+}
+#search li input.large-input {
+    width:97%;
+}
+#search li.border_none input {
+	border: none;
+}
+/*----------------------------------------------*/
+
+/*------------------------------------------------
+	#sideBar
+------------------------------------------------*/

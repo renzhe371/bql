@@ -1,0 +1,10 @@
+<?php
+//environment arguments
+define('_DBNAME','bql');
+define('_TABLE','pro_');
+define('_DBHOST','localhost');
+define('_DBUSER','root');
+define('_DBPASS','toor');
+define('_ENCODE','set names utf8');
+date_default_timezone_set('Etc/GMT-8'); 
+?>
